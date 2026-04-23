@@ -1,0 +1,3 @@
+datasets
+fasttext
+emoji==1.6.1

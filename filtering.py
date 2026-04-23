@@ -14,6 +14,10 @@ import fasttext
 from stopwords_tr import stopwords_tr
 from flagged_words_tr import flagged_words_tr
 
+# Modül yüklendiğinde bir kere oluşturulur, her belgede yeniden kurulmaz.
+_STOPWORDS_SET = frozenset(w.lower() for w in stopwords_tr)
+_FLAGGED_SET   = frozenset(w.lower() for w in flagged_words_tr)
+
 
 # ---------------------------------------------------------------------------
 # Yardımcı
@@ -145,8 +149,7 @@ def filter_by_stopwords(
     words = get_words(text, strip_characters)
     if not words:
         return False
-    stopwords_set = set(w.lower() for w in stopwords_tr)
-    ratio = sum(1 for w in words if w.lower() in stopwords_set) / len(words)
+    ratio = sum(1 for w in words if w.lower() in _STOPWORDS_SET) / len(words)
     return ratio >= min_cutoff
 
 
@@ -162,8 +165,7 @@ def filter_by_flagged_words(
     words = get_words(text, strip_characters)
     if not words:
         return False
-    flagged_set = set(w.lower() for w in flagged_words_tr)
-    ratio = sum(1 for w in words if w.lower() in flagged_set) / len(words)
+    ratio = sum(1 for w in words if w.lower() in _FLAGGED_SET) / len(words)
     return ratio <= max_cutoff
 
 

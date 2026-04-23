@@ -59,6 +59,12 @@ def parse_args():
         default=cpu_count(),
         help="Paralel işlem sayısı.",
     )
+    parser.add_argument(
+        "--dropped_path",
+        type=str,
+        default=None,
+        help="Atılan belgelerin kaydedileceği dizin (verilmezse kaydedilmez).",
+    )
     return parser.parse_args()
 
 
@@ -105,11 +111,20 @@ def main():
     # 4. Kural tabanlı filtreleme (multiprocessing)
     # ------------------------------------------------------------------
     print("\nKural tabanlı filtreleme uygulanıyor...")
-    dataset = dataset.filter(
-        lambda x: should_keep_document(x["text"], params, fasttext_model=None),
+    dataset = dataset.map(
+        lambda x: {"_keep": should_keep_document(x["text"], params, fasttext_model=None)},
         num_proc=args.num_proc,
         desc="Kural filtresi",
     )
+
+    if args.dropped_path:
+        dropped = dataset.filter(lambda x: not x["_keep"], num_proc=args.num_proc, desc="Atılanlar")
+        dropped = dropped.remove_columns(["_keep"])
+        print(f"Atılan belgeler kaydediliyor → {args.dropped_path}")
+        dropped.save_to_disk(args.dropped_path)
+
+    dataset = dataset.filter(lambda x: x["_keep"], num_proc=args.num_proc, desc="Kalan")
+    dataset = dataset.remove_columns(["_keep"])
     after_rules = len(dataset)
     _print_stats("Kural filtresi", initial_size, after_rules)
 
